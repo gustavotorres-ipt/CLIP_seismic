@@ -1,0 +1,7 @@
+.vim/
+captions/
+images/
+older_versions/
+__pycache__/
+seismic_distilbert.pt/
+*.pth

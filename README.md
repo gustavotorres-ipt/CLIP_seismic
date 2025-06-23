@@ -1,0 +1,2 @@
+# CLIP para sísmica
+
