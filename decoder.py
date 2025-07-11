@@ -115,7 +115,6 @@ if __name__ == "__main__":
     model = GlideDecoder256()
     model.to(device)
 
-
     for images, texts in test_loader:
         with torch.no_grad():
             tok_texts = tokenizer(

@@ -48,3 +48,5 @@
     - Em seguida digite uma **descrição da imagem que procura em inglês**.
 
     - **Exemplo**: "*an image with a fault tilting right.*"
+
+- A busca por imagens também pode ser feita utilizando interface gráfica. Rode o arquivo `interface.py` seguindo as mesmas instruções do `search_image.py`.

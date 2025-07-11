@@ -15,6 +15,12 @@ def read_captions_json(file_path):
         captions = json.load(f)["captions"]
         return random.choice(captions)
 
+def load_images(batch_size):
+    image_paths = [os.path.join(IMAGE_FOLDER, filename)
+                   for filename in os.listdir(IMAGE_FOLDER) ]
+    random.shuffle(image_paths)
+    images = [Image.open(path).convert("RGB") for path in image_paths[:batch_size]]
+    return images
 
 def load_datasets(preprocess):
     image_paths = [os.path.join(IMAGE_FOLDER, filename)
