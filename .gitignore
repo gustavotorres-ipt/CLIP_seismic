@@ -3,5 +3,8 @@ captions/
 images/
 older_versions/
 __pycache__/
-seismic_distilbert.pt/
+*.pt/
 *.pth
+imagens_janelas_sismofacies/
+legendas_sismofacies/
+./

@@ -1,4 +1,5 @@
-from clip_training import CustomCLIPModel, load_custom_encoders, IMAGE_FOLDER, TEXT_FOLDER, read_captions_json
+from model_loader import CustomCLIPModel, load_custom_encoders
+from dataset import IMAGE_FOLDER, TEXT_FOLDER, read_captions_json
 import os
 import random
 import numpy as np

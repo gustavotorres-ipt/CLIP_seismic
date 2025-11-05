@@ -75,7 +75,8 @@ def search_image(model, caption, images_torch, original_images, tokenizer):
 
         print("Searching for best match...")
         logits_per_image, logits_per_text = model(images_torch, tok_caption)
-        probs = logits_per_text.softmax(dim=-1).cpu().numpy()
+        # probs = logits_per_text.softmax(dim=-1).cpu().numpy()
+        probs = logits_per_image.softmax(dim=0).cpu().numpy()
 
         idx_best_match = np.argmax(probs)
 

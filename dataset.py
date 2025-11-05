@@ -4,16 +4,13 @@ import random
 import torch
 from torch.utils.data import random_split
 from PIL import Image
-
-
-IMAGE_FOLDER = "images"
-TEXT_FOLDER = "captions"
+from config import IMAGE_FOLDER, TEXT_FOLDER
 
 
 def read_captions_json(file_path):
     with open(file_path) as f:
         captions = json.load(f)["captions"]
-        return random.choice(captions)
+        return captions[0] #random.choice(captions)
 
 def load_images(batch_size):
     image_paths = [os.path.join(IMAGE_FOLDER, filename)

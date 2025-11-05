@@ -1,6 +1,7 @@
 import numpy as np
 from model_loader import load_clip_model
 import open_clip
+from torchvision.transforms.functional import to_pil_image
 import torch
 import torch.nn as nn
 import torch.optim as optim
@@ -12,11 +13,11 @@ from dataset import load_datasets
 
 # TODO fazer pares de imagens e legendas
 
-EPOCHS = 30
+EPOCHS = 50
 
 
 class EarlyStopping:
-    def __init__(self, patience=5, min_delta=0.0):
+    def __init__(self, patience=10, min_delta=0.0):
         self.patience = patience
         self.min_delta = min_delta
         self.best_loss = np.inf
@@ -72,6 +73,11 @@ def train_epoch():
         images = images.to(device)
         texts = [t for t in texts]
 
+        # images = images.clamp(0, 1).cpu()
+        # # Convert to PIL image
+        # final_image = to_pil_image(images[0])
+        # final_image.show()
+
         tok_texts = tokenizer(
             texts, padding=True, truncation=True, return_tensors="pt",
             max_length=128
@@ -122,7 +128,8 @@ def validation_step():
     return avg_val_loss
 
 
-def test_step():
+def test_step(custom_clip_model):
+    custom_clip_model.eval()  # Set the model to evaluation mode
     total_test_loss = 0  # Initialize variable to track test loss
 
     # Disable gradient calculation (since we're not training during testing)
@@ -163,20 +170,20 @@ if __name__ == "__main__":
     optimizer = optim.Adam([
         {'params': custom_clip_model.image_encoder.parameters(), 'lr': 1e-5},
         {'params': custom_clip_model.text_encoder.parameters(), 'lr': 1e-5},
-        {'params': custom_clip_model.projection_layer.parameters(), 'lr': 1e-3},
+        {'params': custom_clip_model.projection_layer.parameters(), 'lr': 1e-4},
     ])
 
     loss_fn = LearnableTemperatureContrastiveLoss()
 
-    early_stopping = EarlyStopping(patience=3, min_delta=0.001)
+    early_stopping = EarlyStopping(patience=5, min_delta=0.001)
 
     lr_scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=2, gamma=0.5)
 
     train_dataset, val_dataset, test_dataset = load_datasets(preprocess)
 
-    train_loader = DataLoader(train_dataset, batch_size=32, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=32, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=32, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=128, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False)
 
     custom_clip_model = custom_clip_model.to(device)
     loss_fn = loss_fn.to(device)
@@ -197,10 +204,9 @@ if __name__ == "__main__":
         # Adjust the learning rate using the scheduler
         lr_scheduler.step()
 
-    custom_clip_model.eval()  # Set the model to evaluation mode
-    test_step()
+    test_step(custom_clip_model)
 
-    output_model = "customized_clip.pth"
+    output_model = "clip_custom_seismic_faces.pth"
 
     torch.save(custom_clip_model.state_dict(), output_model)
     print(output_model, "saved.")
