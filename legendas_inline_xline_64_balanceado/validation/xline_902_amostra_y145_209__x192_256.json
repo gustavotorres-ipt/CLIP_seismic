@@ -1,0 +1,9 @@
+{
+    "captions": [
+        "this image represents a 2D subsurface model with a forward-prograding geometry.",
+        "this depicts a seismic model of a clinoform.",
+        "this image demonstrates a seismic section. It is a forward-prograding geometry.",
+        "this image demonstrates a subsurface model. It is a forward-prograding geometry."
+    ],
+    "label": "sigmoid"
+}

@@ -1,0 +1,10 @@
+{
+    "captions": [
+        "we see here a 2D section. It is an undefined internal geometry.",
+        "we observe here a 2D subsurface model. It has an undefined seismic structure.",
+        "a seismic image. It has an undefined internal geometry.",
+        "this image represents a section of a chaotic internal geometry.",
+        "this depicts a seismic image. It has an undefined internal geometry."
+    ],
+    "label": "chaotic"
+}

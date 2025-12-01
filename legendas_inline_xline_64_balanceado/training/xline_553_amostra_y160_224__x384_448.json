@@ -1,0 +1,8 @@
+{
+    "captions": [
+        "this image represents a subsurface model. It has a sigmoid.",
+        "this depicts a 2D seismic model. It has a progradational geometry.",
+        "a seismic section. It is a progradational geometry."
+    ],
+    "label": "sigmoid"
+}

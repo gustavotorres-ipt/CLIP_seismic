@@ -1,0 +1,10 @@
+{
+    "captions": [
+        "this depicts a 2D subsurface model with a progradational geometry.",
+        "this image demonstrates a 2D seismic model. It is an oblique clinoform pattern.",
+        "this depicts a 2D section with a clinoform.",
+        "we observe here a 2D subsurface model. It has a progradational geometry.",
+        "we observe here a subsurface representation. It is an oblique clinoform pattern."
+    ],
+    "label": "sigmoid"
+}

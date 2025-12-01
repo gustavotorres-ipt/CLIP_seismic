@@ -1,0 +1,12 @@
+{
+    "captions": [
+        "this image represents a seismic image. It has a clinoform.",
+        "this image represents a seismic model with an oblique clinoform pattern.",
+        "this depicts a model. It has a progradational geometry.",
+        "we see here a 2D section. It has a sigmoid.",
+        "this image represents a seismic section. It has a sigmoid.",
+        "this image represents a seismic image. It has a progradational geometry.",
+        "this depicts a section. It is a clinoform."
+    ],
+    "label": "sigmoid"
+}

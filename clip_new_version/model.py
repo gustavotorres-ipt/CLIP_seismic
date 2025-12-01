@@ -3,6 +3,9 @@ import torch.nn as nn
 from transformers import DistilBertModel, DistilBertTokenizerFast
 from torchvision.models import resnet34
 from torchvision import models
+from transformers import AutoTokenizer, AutoModel
+from config import VISION_MODEL, LANGUAGE_MODEL
+import torch.nn.functional as F
 
 class CLIP_DistilBert_ResNet34(nn.Module):
     def __init__(
@@ -16,7 +19,9 @@ class CLIP_DistilBert_ResNet34(nn.Module):
         # -----------------------------
         # 1. TEXT ENCODER (DistilBERT)
         # -----------------------------
-        self.tokenizer = DistilBertTokenizerFast.from_pretrained(text_model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(text_model_name)
+
+        self.text_encoder = AutoModel.from_pretrained(LANGUAGE_MODEL)
         self.text_encoder = DistilBertModel.from_pretrained(text_model_name)
 
         text_hidden_dim = self.text_encoder.config.dim  # usually 768
@@ -27,9 +32,26 @@ class CLIP_DistilBert_ResNet34(nn.Module):
         # -----------------------------
         # 2. IMAGE ENCODER (ResNet-34)
         # -----------------------------
-        self.image_encoder = models.resnet34(weights=models.ResNet34_Weights.DEFAULT)
-        self.image_encoder.fc = nn.Identity()  # remove classification head
+        if "resnet34" in VISION_MODEL:
+            model = models.resnet34(weights=models.ResNet34_Weights.DEFAULT)
+            model = nn.Sequential(*list(model.children())[:-1])
 
+        else: # resnet18
+            model = models.resnet18(pretrained=False)
+            model = nn.Sequential(
+                model.conv1,
+                model.bn1,
+                model.relu,
+                model.maxpool,
+                model.layer1,
+                model.layer2,
+                model.layer3,
+                model.layer4,
+                model.avgpool
+            ) 
+        model.load_state_dict(torch.load(VISION_MODEL))
+        self.image_encoder = model
+        
         image_hidden_dim = 512  # ResNet-18 output dimension
 
         # Image projection into shared space
@@ -68,7 +90,8 @@ class CLIP_DistilBert_ResNet34(nn.Module):
     # --------------------------------------------------------------
     def encode_image(self, images):
         img_feat = self.image_encoder(images)  # (batch, 512)
-        img_emb = self.image_proj(img_feat)
+        # img_emb = self.image_proj(img_feat[:, :, 0, 0])
+        img_emb = img_feat[:, :, 0, 0]
         img_emb = img_emb / img_emb.norm(dim=-1, keepdim=True)
         return img_emb
 
@@ -76,14 +99,19 @@ class CLIP_DistilBert_ResNet34(nn.Module):
     # Forward pass: compute contrastive logits
     # --------------------------------------------------------------
     def forward(self, images, texts):
-        image_emb = self.encode_image(images)  # (B, D)
-        text_emb = self.encode_text(texts)  # (B, D)
+        image_features = self.encode_image(images)
+        text_features = self.encode_text(texts)
+        # Normalize features
+        image_features = F.normalize(image_features, dim=1)
+        text_features = F.normalize(text_features, dim=1)
 
-        # Compute pairwise similarity
-        logit_scale = self.logit_scale.exp()
-        logits_per_image = logit_scale * (image_emb @ text_emb.T)
-        logits_per_text = logits_per_image.T
+        # Compute cosine similarity
+        logits_per_image = image_features @ text_features.T
+        logits_per_text = text_features @ image_features.T
+
+        # Use learned temperature
+        logit_scale = self.logit_scale.exp().clamp(max=100)
+        logits_per_image *= logit_scale
+        logits_per_text *= logit_scale
 
         return logits_per_image, logits_per_text
-
-

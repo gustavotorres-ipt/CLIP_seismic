@@ -1,0 +1,8 @@
+{
+    "captions": [
+        "this depicts a section. It has a sigmoid.",
+        "this image demonstrates a seismic section. It has a sigmoid.",
+        "this image demonstrates a 2D subsurface model. It is a sigmoid."
+    ],
+    "label": "sigmoid"
+}

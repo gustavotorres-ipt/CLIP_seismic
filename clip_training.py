@@ -10,6 +10,8 @@ from torch.utils.data import DataLoader
 from transformers import AutoTokenizer
 from tqdm import tqdm
 from dataset import load_datasets
+from torchvision import transforms
+from config import BATCH_SIZE
 
 # TODO fazer pares de imagens e legendas
 
@@ -157,9 +159,16 @@ def test_step(custom_clip_model):
 if __name__ == "__main__":
     device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
-    model, _, preprocess = open_clip.create_model_and_transforms(
-        'ViT-B-32', pretrained='laion2b_s34b_b79k'
-    )
+    # model, _, preprocess = open_clip.create_model_and_transforms(
+    #     'ViT-B-32', pretrained='laion2b_s34b_b79k'
+    # )
+
+    preprocess = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406],
+                             [0.229, 0.224, 0.225])  # ImageNet stats
+    ])
 
     # tokenizer = open_clip.get_tokenizer('ViT-B-32')
     tokenizer = AutoTokenizer.from_pretrained('distilbert-base-uncased')
@@ -168,9 +177,11 @@ if __name__ == "__main__":
     custom_clip_model = load_clip_model()
 
     optimizer = optim.Adam([
-        {'params': custom_clip_model.image_encoder.parameters(), 'lr': 1e-5},
+        {'params': custom_clip_model.image_encoder.parameters(), 'lr': 1e-7},  # 1e-5
         {'params': custom_clip_model.text_encoder.parameters(), 'lr': 1e-5},
-        {'params': custom_clip_model.projection_layer.parameters(), 'lr': 1e-4},
+        {'params': custom_clip_model.text_proj.parameters(), 'lr': 1e-4},
+        {'params': custom_clip_model.image_proj.parameters(), 'lr': 1e-4},
+        {'params': custom_clip_model.logit_scale, 'lr': 1e-4},
     ])
 
     loss_fn = LearnableTemperatureContrastiveLoss()
@@ -181,9 +192,9 @@ if __name__ == "__main__":
 
     train_dataset, val_dataset, test_dataset = load_datasets(preprocess)
 
-    train_loader = DataLoader(train_dataset, batch_size=128, shuffle=True)
-    val_loader = DataLoader(val_dataset, batch_size=128, shuffle=False)
-    test_loader = DataLoader(test_dataset, batch_size=128, shuffle=False)
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
+    test_loader = DataLoader(test_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
     custom_clip_model = custom_clip_model.to(device)
     loss_fn = loss_fn.to(device)
@@ -206,7 +217,7 @@ if __name__ == "__main__":
 
     test_step(custom_clip_model)
 
-    output_model = "clip_custom_seismic_faces.pth"
+    output_model = "clip_janelas_seismic_faces.pth"
 
     torch.save(custom_clip_model.state_dict(), output_model)
     print(output_model, "saved.")

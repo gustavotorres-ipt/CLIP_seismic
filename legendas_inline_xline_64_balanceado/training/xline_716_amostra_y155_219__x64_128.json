@@ -1,0 +1,11 @@
+{
+    "captions": [
+        "a 2D subsurface model. It has a sigmoidal clinoform set.",
+        "we observe here a model with a sigmoidal clinoform set.",
+        "this depicts a seismic section. It has a progradational geometry.",
+        "we observe here a seismic model. It is a sigmoidal clinoform set.",
+        "we see here a seismic image. It is a forward-prograding geometry.",
+        "this depicts a subsurface model. It is a forward-prograding geometry."
+    ],
+    "label": "sigmoid"
+}

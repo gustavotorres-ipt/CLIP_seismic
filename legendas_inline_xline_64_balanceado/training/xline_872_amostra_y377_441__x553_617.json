@@ -1,0 +1,11 @@
+{
+    "captions": [
+        "we see here a seismic model. It has a chaotic internal geometry.",
+        "this image demonstrates a subsurface model. There are internal structuraly disturbed reflexions.",
+        "we observe here a section. It has a chaotic reflection.",
+        "we see here a 2D subsurface model. It has an undefined internal geometry.",
+        "we see here a seismic model with an undefined seismic structure.",
+        "this depicts a seismic section. It is an undefined internal geometry."
+    ],
+    "label": "chaotic"
+}

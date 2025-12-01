@@ -1,0 +1,9 @@
+{
+    "captions": [
+        "this image represents a 2D subsurface model. It has a fanning reflection geometry.",
+        "we see here a section with a divergent bedform geometry.",
+        "this image represents a section with a thickening wedge pattern.",
+        "a seismic image with a flaring reflection geometry."
+    ],
+    "label": "divergent"
+}

@@ -7,4 +7,6 @@ __pycache__/
 *.pth
 imagens_janelas_sismofacies/
 legendas_sismofacies/
-./
+imagens*
+legendas*
+janelas*
