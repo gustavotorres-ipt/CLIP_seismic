@@ -1,6 +1,0 @@
-======== Number of instances =========
-
-chaotic instances: 141
-divergent instances: 181
-parallel instances: 200
-sigmoid instances: 159

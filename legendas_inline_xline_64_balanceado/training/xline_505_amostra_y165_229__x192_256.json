@@ -1,9 +1,0 @@
-{
-    "captions": [
-        "we see here a 2D section. It is a sigmoid.",
-        "this image demonstrates a 2D subsurface model with an oblique clinoform pattern.",
-        "this image demonstrates a seismic section. It has a sigmoid.",
-        "this image represents a model. It has a forward-prograding geometry."
-    ],
-    "label": "sigmoid"
-}
