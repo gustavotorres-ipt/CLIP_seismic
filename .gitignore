@@ -10,3 +10,5 @@ legendas_sismofacies/
 imagens*
 legendas*
 janelas*
+data/
+test_torch.py

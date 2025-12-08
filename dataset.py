@@ -4,49 +4,70 @@ import random
 import torch
 from torch.utils.data import random_split
 from PIL import Image
-from config import IMAGE_FOLDER_VALIDATION, IMAGE_FOLDER_TRAINING
-from config import TEXT_FOLDER_VALIDATION, TEXT_FOLDER_TRAINING
-
+from config import IMAGE_FOLDER_TRAIN, TEXT_FOLDER_TRAIN, IMAGE_FOLDER_VAL, TEXT_FOLDER_VAL
+from torchvision import transforms
 
 def read_captions_json(file_path):
     with open(file_path) as f:
         captions = json.load(f)["captions"]
         return captions[0] #random.choice(captions)
 
-# def load_images(batch_size):
-#     image_paths = [os.path.join(IMAGE_FOLDER_VALIDATION, filename)
-#                    for filename in os.listdir(IMAGE_FOLDER_VALIDATION) ]
-#     random.shuffle(image_paths)
-#     images = [Image.open(path).convert("RGB") for path in image_paths[:batch_size]]
-#     return images
+def load_images(batch_size):
+    image_paths = [os.path.join(IMAGE_FOLDER_TRAIN, filename)
+                   for filename in os.listdir(IMAGE_FOLDER_TRAIN) ]
+    random.shuffle(image_paths)
+    images = [Image.open(path).convert("RGB")
+              for path in image_paths[:batch_size]]
+    return images
 
-def load_datasets(preprocess):
-    image_paths_train = [os.path.join(IMAGE_FOLDER_TRAINING, filename)
-                         for filename in os.listdir(IMAGE_FOLDER_TRAINING) ]
+def load_datasets():
+    image_paths_train = [
+        os.path.join(IMAGE_FOLDER_TRAIN, filename)
+        for filename in os.listdir(IMAGE_FOLDER_TRAIN)
+    ]
 
-    image_paths_val = [os.path.join(IMAGE_FOLDER_VALIDATION, filename)
-                       for filename in os.listdir(IMAGE_FOLDER_VALIDATION) ]
+    image_paths_val = [
+        os.path.join(IMAGE_FOLDER_VAL, filename)
+        for filename in os.listdir(IMAGE_FOLDER_VAL)
+    ]
 
     print("Loading images and captions...")
-    text_paths_train = [os.path.join(TEXT_FOLDER_TRAINING, filename)
-                        for filename in os.listdir(TEXT_FOLDER_TRAINING) ]
+
+    text_paths_train = [os.path.join(TEXT_FOLDER_TRAIN, filename)
+                        for filename in os.listdir(TEXT_FOLDER_TRAIN) ]
     captions_train = [read_captions_json(path) for path in text_paths_train]
 
-    text_paths_val = [os.path.join(TEXT_FOLDER_VALIDATION, filename)
-                      for filename in os.listdir(TEXT_FOLDER_VALIDATION) ]
+    text_paths_val = [os.path.join(TEXT_FOLDER_VAL, filename)
+                      for filename in os.listdir(TEXT_FOLDER_VAL) ]
     captions_val = [read_captions_json(path) for path in text_paths_val]
 
+    transformation = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406],
+                             [0.229, 0.224, 0.225])  # ImageNet stats
+    ])
+
     train_dataset = CustomDataset(
-        image_paths=image_paths_train, texts=captions_train, transform=preprocess
+        image_paths=image_paths_train, texts=captions_train, transform=transformation
     )
     val_dataset = CustomDataset(
-        image_paths=image_paths_val, texts=captions_val, transform=preprocess
+        image_paths=image_paths_val, texts=captions_val, transform=transformation
     )
 
-    return train_dataset, val_dataset, val_dataset
+    return train_dataset, val_dataset
 
 
 class CustomDataset(torch.utils.data.Dataset):
+    """
+    # TODO fix transform ver a transformação da ResNet (precisa ser a mesma)
+    transform = transforms.Compose([
+        transforms.Resize((224, 224)),
+        transforms.ToTensor(),
+        transforms.Normalize([0.485, 0.456, 0.406],
+                             [0.229, 0.224, 0.225])  # ImageNet stats
+    ])
+    """
     def __init__(self, image_paths, texts, transform=None):
         self.image_paths = image_paths
         self.texts = texts

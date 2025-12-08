@@ -6,22 +6,26 @@ from transformers import AutoTokenizer, AutoModel
 from torchvision import models
 
 class CustomCLIPModel(nn.Module):
-    def __init__(self, image_encoder, text_encoder, init_temperature=0.1):
+    def __init__(self, image_encoder, text_encoder, init_temperature=1., output_dim=128):
         super().__init__()
-        self.logit_scale = nn.Parameter(torch.tensor([torch.log(torch.tensor(1.0 / init_temperature))]))
+        #self.logit_scale = nn.Parameter(torch.tensor([torch.log(torch.tensor(1.0 / init_temperature))]))
+        self.logit_scale = nn.Parameter(torch.tensor(init_temperature))
         self.image_encoder = image_encoder  # Your custom image encoder
         self.text_encoder = text_encoder  # Your custom text encoder
-        self.projection_layer = nn.Linear(in_features=768, out_features=512) 
+        self.text_proj = nn.Linear(in_features=768, out_features=output_dim) 
+        self.image_proj = nn.Linear(in_features=512, out_features=output_dim) 
+        self.best_model_weights = self.state_dict()
 
     def encode_image(self, images):
         features_image = self.image_encoder(images)[:,:,0,0]
-        return features_image
+        features_proj = self.image_proj(features_image)   # Custom text encoder
+        return features_proj
         # return self.projection_layer(features_image)  # Project to CLIP space
 
     def encode_text(self, tokenized_texts):
         output_llm = self.text_encoder(**tokenized_texts)
         features_text = output_llm.last_hidden_state[:, 0, :]
-        features_proj = self.projection_layer(features_text)   # Custom text encoder
+        features_proj = self.text_proj(features_text)   # Custom text encoder
         return features_proj
         # return self.projection_layer(text_features)  # Project to CLIP space
 
@@ -37,7 +41,7 @@ class CustomCLIPModel(nn.Module):
         logits_per_text = text_features @ image_features.T
 
         # Use learned temperature
-        logit_scale = self.logit_scale.exp()
+        logit_scale = self.logit_scale.exp().clamp(max=100)
         logits_per_image *= logit_scale
         logits_per_text *= logit_scale
 
@@ -70,7 +74,6 @@ def load_custom_encoders():
     text_encoder = AutoModel.from_pretrained(LANGUAGE_MODEL)
 
     image_encoder.load_state_dict(torch.load(VISION_MODEL))  # Custom image encoder
-    image_encoder.eval()
 
     return image_encoder, text_encoder
 

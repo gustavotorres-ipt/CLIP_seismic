@@ -7,12 +7,13 @@ from transformers import AutoTokenizer, AutoModel
 from config import VISION_MODEL, LANGUAGE_MODEL
 import torch.nn.functional as F
 
-class CLIP_DistilBert_ResNet34(nn.Module):
+class CLIP_DistilBert_ResNet(nn.Module):
     def __init__(
         self,
         text_model_name: str = "distilbert-base-uncased",
-        embed_dim: int = 512,
+        embed_dim: int = 128,
         image_pretrained: bool = True,
+        learnable_temp = 1.
     ) -> None:
         super().__init__()
 
@@ -37,7 +38,7 @@ class CLIP_DistilBert_ResNet34(nn.Module):
             model = nn.Sequential(*list(model.children())[:-1])
 
         else: # resnet18
-            model = models.resnet18(pretrained=False)
+            model = models.resnet18(weights=None)
             model = nn.Sequential(
                 model.conv1,
                 model.bn1,
@@ -59,7 +60,7 @@ class CLIP_DistilBert_ResNet34(nn.Module):
 
         # Temperature parameter (learnable)
         self.logit_scale = nn.Parameter(
-            torch.ones([]) * torch.log(torch.tensor(1 / 0.07))
+            torch.ones([]) * (1 / learnable_temp)
         )
 
     # ------------------------------------------------------------------
@@ -93,6 +94,7 @@ class CLIP_DistilBert_ResNet34(nn.Module):
         # img_emb = self.image_proj(img_feat[:, :, 0, 0])
         img_emb = img_feat[:, :, 0, 0]
         img_emb = img_emb / img_emb.norm(dim=-1, keepdim=True)
+        img_emb = self.image_proj(img_emb)
         return img_emb
 
     # --------------------------------------------------------------
