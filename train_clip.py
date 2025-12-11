@@ -1,12 +1,13 @@
-import torch.nn.functional as F
 import torch
+import torch.nn.functional as F
 import copy
+import math
 from model import CLIP_DistilBert_ResNet
 from torch.utils.data import DataLoader
-from torch.optim import AdamW
+from torch.optim import Adam
 from dataset import load_datasets
 from tqdm import tqdm
-from config import EPOCHS, LEARNING_RATES, BATCH_SIZE, PATIENCE
+from config import EPOCHS, LEARNING_RATES, BATCH_SIZE, PATIENCE, OUTPUT_MODEL
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
@@ -21,7 +22,7 @@ def clip_loss(logits_per_image, logits_per_text):
 def main():
     custom_clip_model = CLIP_DistilBert_ResNet().to(device)
 
-    optimizer = AdamW([
+    optimizer = Adam([
         {'params': custom_clip_model.image_encoder.parameters(),
          'lr': LEARNING_RATES['image_encoder']},
         {'params': custom_clip_model.text_encoder.parameters(),
@@ -32,7 +33,7 @@ def main():
          'lr': LEARNING_RATES['text_proj']},
         {'params': custom_clip_model.logit_scale,
          'lr': LEARNING_RATES['logit_scale']},
-    ], weight_decay=0.2)
+    ])
 
     lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
         optimizer, T_max=EPOCHS, eta_min=1e-6,
@@ -63,6 +64,8 @@ def main():
             
             optimizer.zero_grad()
             loss.backward()
+            with torch.no_grad():
+                custom_clip_model.logit_scale.clamp_(0, 4.6)
             optimizer.step()
             
             total_train_loss += loss.item()
@@ -92,6 +95,8 @@ def main():
             best_val_loss = avg_val_loss
             best_model_wts = copy.deepcopy(custom_clip_model.state_dict())
             epochs_no_improve = 0
+            torch.save(custom_clip_model.state_dict(), OUTPUT_MODEL)
+            print(OUTPUT_MODEL, "saved.")
         else:
             epochs_no_improve += 1
             if epochs_no_improve >= PATIENCE:
@@ -99,11 +104,6 @@ def main():
                 break
 
     custom_clip_model.load_state_dict(best_model_wts)
-
-    output_model = "clip_janelas_seismic_faces.pth"
-
-    torch.save(custom_clip_model.state_dict(), output_model)
-    print(output_model, "saved.")
             
 
 if __name__ == "__main__":

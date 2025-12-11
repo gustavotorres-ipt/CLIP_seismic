@@ -4,14 +4,14 @@ from transformers import DistilBertModel, DistilBertTokenizerFast
 from torchvision.models import resnet34
 from torchvision import models
 from transformers import AutoTokenizer, AutoModel
-from config import VISION_MODEL, LANGUAGE_MODEL
+from config import VISION_MODEL, LANGUAGE_MODEL, PROJECTION_SIZE
 import torch.nn.functional as F
 
 class CLIP_DistilBert_ResNet(nn.Module):
     def __init__(
         self,
         text_model_name: str = "distilbert-base-uncased",
-        embed_dim: int = 128,
+        embed_dim: int = PROJECTION_SIZE,
         image_pretrained: bool = True,
         learnable_temp = 1.
     ) -> None:
@@ -21,9 +21,9 @@ class CLIP_DistilBert_ResNet(nn.Module):
         # 1. TEXT ENCODER (DistilBERT)
         # -----------------------------
         self.tokenizer = AutoTokenizer.from_pretrained(text_model_name)
+        self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 
         self.text_encoder = AutoModel.from_pretrained(LANGUAGE_MODEL)
-        self.text_encoder = DistilBertModel.from_pretrained(text_model_name)
 
         text_hidden_dim = self.text_encoder.config.dim  # usually 768
 
