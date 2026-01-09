@@ -6,6 +6,7 @@ from torch.utils.data import random_split
 from PIL import Image
 from config import IMAGE_FOLDER_TRAIN, TEXT_FOLDER_TRAIN, IMAGE_FOLDER_VAL, TEXT_FOLDER_VAL
 from torchvision import transforms
+from torchvision.transforms.v2 import GaussianNoise
 
 def read_captions_json(file_path):
     with open(file_path) as f:
@@ -45,7 +46,8 @@ def load_datasets():
         transforms.Resize((224, 224)),
         transforms.ToTensor(),
         transforms.Normalize([0.485, 0.456, 0.406],
-                             [0.229, 0.224, 0.225])  # ImageNet stats
+                             [0.229, 0.224, 0.225]),  # ImageNet stats
+        # GaussianNoise(mean=0., sigma=0.2, clip=True)
     ])
     # transformation
     # _, _, transformation = open_clip.create_model_and_transforms(
