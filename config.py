@@ -41,14 +41,14 @@ WARMUP_STEPS = 100
 # }
 # OUTPUT_MODEL = "clip_il_xl_32_40_64_balanceado.pth"
 
-VISION_MODEL = 'checkpoints/resnet18_inline_xline_64_balanceado_v2_encoder.pth'
-LANGUAGE_MODEL = 'checkpoints/mlm_sismofacies.pt'
+VISION_MODEL = 'checkpoints/resnet34_parihaka_f3_encoder.pth'
+LANGUAGE_MODEL = 'checkpoints/lang_ckpt_parihaka_f3.pt'
 
-IMAGE_FOLDER_TRAIN = 'data/janelas_inline_xline_64_balanceado/training'
-TEXT_FOLDER_TRAIN = 'data/legendas_inline_xline_64_balanceado/training'
+IMAGE_FOLDER_TRAIN = 'data/janelas_parihaka_f3_balanceado/training'
+TEXT_FOLDER_TRAIN = 'data/legendas_parihaka_f3_balanceado/training'
  
-IMAGE_FOLDER_VAL = 'data/janelas_inline_xline_64_balanceado/validation'
-TEXT_FOLDER_VAL = 'data/legendas_inline_xline_64_balanceado/validation'
+IMAGE_FOLDER_VAL = 'data/janelas_parihaka_f3_balanceado/validation'
+TEXT_FOLDER_VAL = 'data/legendas_parihaka_f3_balanceado/validation'
 
 LEARNING_RATES = {
     'image_encoder': 5e-5,
@@ -57,4 +57,4 @@ LEARNING_RATES = {
     'text_proj':     5e-4,
     'logit_scale':   5e-4
 }
-OUTPUT_MODEL = "clip_il_xl_64_balanceado.pth"
+OUTPUT_MODEL = "clip_parihaka_f3.pth"
