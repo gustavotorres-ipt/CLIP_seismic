@@ -1,4 +1,4 @@
-BATCH_SIZE = 64
+BATCH_SIZE = 256
 PATIENCE = 30
 EPOCHS = 32
 PROJECTION_SIZE = 512
@@ -41,7 +41,7 @@ WARMUP_STEPS = 100
 # }
 # OUTPUT_MODEL = "clip_il_xl_32_40_64_balanceado.pth"
 
-VISION_MODEL = 'checkpoints/resnet34_parihaka_f3_encoder.pth'
+VISION_MODEL = 'checkpoints/resnet18_parihaka_f3_encoder.pth'
 LANGUAGE_MODEL = 'checkpoints/lang_ckpt_parihaka_f3.pt'
 
 IMAGE_FOLDER_TRAIN = 'data/janelas_parihaka_f3_balanceado/training'
@@ -51,10 +51,10 @@ IMAGE_FOLDER_VAL = 'data/janelas_parihaka_f3_balanceado/validation'
 TEXT_FOLDER_VAL = 'data/legendas_parihaka_f3_balanceado/validation'
 
 LEARNING_RATES = {
-    'image_encoder': 5e-5,
-    'text_encoder':  5e-5,
-    'image_proj':    5e-4,
-    'text_proj':     5e-4,
-    'logit_scale':   5e-4
+    'image_encoder': 1e-5,
+    'text_encoder':  1e-5,
+    'image_proj':    1e-4,
+    'text_proj':     1e-4,
+    'logit_scale':   1e-4
 }
 OUTPUT_MODEL = "clip_parihaka_f3.pth"
