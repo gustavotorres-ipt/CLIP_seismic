@@ -30,7 +30,7 @@ class CLIP_DistilBert_ResNet(nn.Module):
 
         # Text projection into shared space
         self.text_proj = nn.Linear(text_hidden_dim, embed_dim)
-        self.text_dropout = nn.Dropout(p=0.2)
+        # self.text_dropout = nn.Dropout(p=0.2)
 
         # -----------------------------
         # 2. IMAGE ENCODER (ResNet-34)
@@ -59,7 +59,7 @@ class CLIP_DistilBert_ResNet(nn.Module):
 
         # Image projection into shared space
         self.image_proj = nn.Linear(image_hidden_dim, embed_dim)
-        self.image_dropout = nn.Dropout(p=0.2)
+        # self.image_dropout = nn.Dropout(p=0.2)
 
 
         ########################################################
@@ -85,7 +85,7 @@ class CLIP_DistilBert_ResNet(nn.Module):
         # Use CLS token embedding (DistilBERT has CLS at index 0)
         text_emb = outputs.last_hidden_state[:, 0, :]  # (batch, hidden_dim)
         text_emb = self.text_proj(text_emb)
-        text_emb = self.text_dropout(text_emb)
+        # text_emb = self.text_dropout(text_emb)
 
         return text_emb
 
@@ -96,7 +96,7 @@ class CLIP_DistilBert_ResNet(nn.Module):
         img_feat = self.image_encoder(images)  # (batch, 512)
         img_emb = img_feat[:, :, 0, 0]
         img_emb = self.image_proj(img_emb)
-        img_emb = self.image_dropout(img_emb)
+        # img_emb = self.image_dropout(img_emb)
 
         return img_emb
 

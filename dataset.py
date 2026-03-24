@@ -4,7 +4,7 @@ import random
 import torch
 # from torch.utils.data import random_split
 from PIL import Image
-from config import IMAGE_FOLDER_TRAIN, TEXT_FOLDER_TRAIN, IMAGE_FOLDER_VAL, TEXT_FOLDER_VAL
+from config import IMAGE_FOLDER_TRAIN, TEXT_FOLDER_TRAIN, IMAGE_FOLDER_VAL, TEXT_FOLDER_VAL, IMG_SIZE
 from torchvision import transforms
 # from torchvision.transforms.v2 import GaussianNoise
 
@@ -22,7 +22,7 @@ def read_captions_json(file_path):
 
 def read_labels_json(file_path):
     with open(file_path) as f:
-        return json.load(f)["labels"]
+        return json.load(f)["label"]
 
 
 def load_images(batch_size):
@@ -57,14 +57,14 @@ def load_datasets():
     labels_val = [read_labels_json(path) for path in text_paths_val]
 
     transformation_train = transforms.Compose([
-        transforms.RandomResizedCrop(224, scale=(0.6, 1.0)),
+        transforms.RandomResizedCrop(IMG_SIZE, scale=(0.6, 1.0)),
         transforms.ColorJitter(brightness=0.2, contrast=0.2),
         transforms.ToTensor(),
         ImageNorm(),
     ])
 
     transformation_val = transforms.Compose([
-        transforms.Resize((224, 224)),
+        transforms.Resize((IMG_SIZE, IMG_SIZE)),
         transforms.ToTensor(),
         ImageNorm(),
     ])

@@ -8,7 +8,7 @@ from torch.utils.data import DataLoader
 from torch.optim import Adam
 from dataset import load_datasets
 from tqdm import tqdm
-from config import EPOCHS, LEARNING_RATES, BATCH_SIZE, PATIENCE, OUTPUT_MODEL, device
+from config import EPOCHS, LEARNING_RATES, BATCH_SIZE, PATIENCE, CLIP_FILE, device
 
 
 def clip_loss(logits_per_image, logits_per_text):
@@ -20,9 +20,9 @@ def clip_loss(logits_per_image, logits_per_text):
 
 
 def main():
-    while os.path.exists(OUTPUT_MODEL):
+    while os.path.exists(CLIP_FILE):
         user_input = input(
-            f"A model {OUTPUT_MODEL} already exists. Do you want to override it? (y/n): ")
+            f"A model {CLIP_FILE} already exists. Do you want to override it? (y/n): ")
         if user_input[0] == 'n':
             sys.exit(0)
         elif user_input[0] == 'y':
@@ -115,8 +115,8 @@ def main():
             best_val_loss = avg_val_loss
             best_model_wts = copy.deepcopy(custom_clip_model.state_dict())
             epochs_no_improve = 0
-            torch.save(custom_clip_model.state_dict(), OUTPUT_MODEL)
-            print(OUTPUT_MODEL, "saved.")
+            torch.save(custom_clip_model.state_dict(), CLIP_FILE)
+            print(CLIP_FILE, "saved.")
         else:
             epochs_no_improve += 1
             if epochs_no_improve >= PATIENCE:
