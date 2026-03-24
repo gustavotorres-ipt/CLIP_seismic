@@ -19,6 +19,12 @@ def read_captions_json(file_path):
         captions = json.load(f)["captions"]
         return captions
 
+
+def read_labels_json(file_path):
+    with open(file_path) as f:
+        return json.load(f)["labels"]
+
+
 def load_images(batch_size):
     image_paths = [os.path.join(IMAGE_FOLDER_TRAIN, filename)
                    for filename in sorted(os.listdir(IMAGE_FOLDER_TRAIN)) ]
@@ -43,10 +49,12 @@ def load_datasets():
     text_paths_train = [os.path.join(TEXT_FOLDER_TRAIN, filename)
                         for filename in sorted(os.listdir(TEXT_FOLDER_TRAIN)) ]
     captions_train = [read_captions_json(path) for path in text_paths_train]
+    labels_train = [read_labels_json(path) for path in text_paths_train]
 
     text_paths_val = [os.path.join(TEXT_FOLDER_VAL, filename)
                       for filename in sorted(os.listdir(TEXT_FOLDER_VAL)) ]
     captions_val = [read_captions_json(path) for path in text_paths_val]
+    labels_val = [read_labels_json(path) for path in text_paths_val]
 
     transformation = transforms.Compose([
         transforms.Resize((224, 224)),
@@ -58,20 +66,21 @@ def load_datasets():
 
     train_dataset = CustomDataset(
         image_paths=image_paths_train, caption_list_per_image=captions_train,
-        transform=transformation
+        labels=labels_train, transform=transformation
     )
     val_dataset = CustomDataset(
         image_paths=image_paths_val, caption_list_per_image=captions_val,
-        transform=transformation
+        labels=labels_val, transform=transformation
     )
 
     return train_dataset, val_dataset
 
 
 class CustomDataset(torch.utils.data.Dataset):
-    def __init__(self, image_paths, caption_list_per_image, transform=None):
+    def __init__(self, image_paths, caption_list_per_image, labels, transform=None):
         self.image_paths = image_paths
         self.caption_list_per_image = caption_list_per_image
+        self.labels = labels
         self.transform = transform
 
     def __len__(self):
@@ -83,4 +92,5 @@ class CustomDataset(torch.utils.data.Dataset):
         if self.transform:
             image = self.transform(image)
         text = random.choice(self.caption_list_per_image[idx])
-        return image, text
+        label = self.labels[idx]
+        return image, text, label

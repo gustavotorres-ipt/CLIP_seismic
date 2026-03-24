@@ -1,3 +1,5 @@
+import os
+import sys
 import torch
 import torch.nn.functional as F
 import copy
@@ -18,6 +20,17 @@ def clip_loss(logits_per_image, logits_per_text):
 
 
 def main():
+    while os.path.exists(OUTPUT_MODEL):
+        user_input = input(
+            f"A model {OUTPUT_MODEL} already exists. Do you want to override it? (y/n): ")
+        if user_input[0] == 'n':
+            sys.exit(0)
+        elif user_input[0] == 'y':
+            break
+        else:
+            print("Invalid option.")
+
+
     custom_clip_model = CLIP_DistilBert_ResNet().to(device)
 
     optimizer = Adam([
@@ -57,7 +70,7 @@ def main():
         custom_clip_model.train()
         total_train_loss, total_val_loss = 0, 0
 
-        for step, (images, texts) in enumerate(tqdm(train_loader)):
+        for step, (images, texts, labels) in enumerate(tqdm(train_loader)):
             images = images.to(device)
             
             optimizer.zero_grad()
@@ -79,7 +92,7 @@ def main():
         custom_clip_model.eval()
 
         with torch.no_grad():
-            for images, texts in tqdm(val_loader):
+            for images, texts, _ in tqdm(val_loader):
                 images = images.to(device)
                 # texts = list of caption strings
                 
