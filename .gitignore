@@ -12,3 +12,4 @@ legendas*
 janelas*
 data/
 test_torch.py
+*.bak

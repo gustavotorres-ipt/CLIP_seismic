@@ -56,21 +56,26 @@ def load_datasets():
     captions_val = [read_captions_json(path) for path in text_paths_val]
     labels_val = [read_labels_json(path) for path in text_paths_val]
 
-    transformation = transforms.Compose([
-        transforms.Resize((224, 224)),
-        transforms.RandomResizedCrop(224, scale=(0.8, 1.0)),
+    transformation_train = transforms.Compose([
+        transforms.RandomResizedCrop(224, scale=(0.6, 1.0)),
         transforms.ColorJitter(brightness=0.2, contrast=0.2),
+        transforms.ToTensor(),
+        ImageNorm(),
+    ])
+
+    transformation_val = transforms.Compose([
+        transforms.Resize((224, 224)),
         transforms.ToTensor(),
         ImageNorm(),
     ])
 
     train_dataset = CustomDataset(
         image_paths=image_paths_train, caption_list_per_image=captions_train,
-        labels=labels_train, transform=transformation
+        labels=labels_train, transform=transformation_train,
     )
     val_dataset = CustomDataset(
         image_paths=image_paths_val, caption_list_per_image=captions_val,
-        labels=labels_val, transform=transformation
+        labels=labels_val, transform=transformation_val,
     )
 
     return train_dataset, val_dataset
