@@ -55,7 +55,7 @@ class CLIP_DistilBert_ResNet(nn.Module):
         model.load_state_dict(torch.load(VISION_MODEL))
         self.image_encoder = model
         
-        image_hidden_dim = PROJECTION_SIZE  # ResNet-18 output dimension
+        image_hidden_dim = 512  # ResNet-18 output dimension
 
         # Image projection into shared space
         self.image_proj = nn.Linear(image_hidden_dim, embed_dim)
