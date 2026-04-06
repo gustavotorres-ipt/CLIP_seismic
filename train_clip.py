@@ -1,5 +1,6 @@
 import os
 import sys
+import argparse
 import torch
 import torch.nn.functional as F
 import copy
@@ -8,7 +9,9 @@ from torch.utils.data import DataLoader
 from torch.optim import Adam
 from dataset import load_datasets
 from tqdm import tqdm
-from config import EPOCHS, LEARNING_RATES, BATCH_SIZE, PATIENCE, CLIP_FILE, device
+from config import EPOCHS, LEARNING_RATES, BATCH_SIZE, PATIENCE, device
+
+STEPS_SCHEDULER = 2
 
 
 def clip_loss(logits_per_image, logits_per_text):
@@ -19,10 +22,10 @@ def clip_loss(logits_per_image, logits_per_text):
     return (loss_i + loss_t) / 2
 
 
-def main():
-    while os.path.exists(CLIP_FILE):
+def main(args):
+    while os.path.exists(args.output_model):
         user_input = input(
-            f"A model {CLIP_FILE} already exists. Do you want to override it? (y/n): ")
+            f"A model {args.output_model} already exists. Do you want to override it? (y/n): ")
         if user_input[0] == 'n':
             sys.exit(0)
         elif user_input[0] == 'y':
@@ -59,7 +62,7 @@ def main():
 
     scheduler = torch.optim.lr_scheduler.StepLR(
         optimizer,
-        step_size=4,   # every 2 epochs
+        step_size=STEPS_SCHEDULER,
         gamma=0.5      # multiply LR by 0.5
     )
 
@@ -86,7 +89,7 @@ def main():
 
             total_train_loss += loss.item()
 
-        avg_train_loss = total_train_loss / len(train_loader)
+        avg_train_loss = total_train_loss / len(train_dataset)
 
         ######### Validation ###########
         custom_clip_model.eval()
@@ -101,7 +104,7 @@ def main():
                 
                 total_val_loss += loss.item()
 
-        avg_val_loss = total_val_loss / len(val_loader)
+        avg_val_loss = total_val_loss / len(val_dataset)
 
         current_lr = scheduler.get_last_lr()
         scheduler.step()
@@ -115,8 +118,8 @@ def main():
             best_val_loss = avg_val_loss
             best_model_wts = copy.deepcopy(custom_clip_model.state_dict())
             epochs_no_improve = 0
-            torch.save(custom_clip_model.state_dict(), CLIP_FILE)
-            print(CLIP_FILE, "saved.")
+            torch.save(custom_clip_model.state_dict(), args.output_model)
+            print(args.output_model, "saved.")
         else:
             epochs_no_improve += 1
             if epochs_no_improve >= PATIENCE:
@@ -124,7 +127,13 @@ def main():
                 break
 
     custom_clip_model.load_state_dict(best_model_wts)
-            
+
 
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser('Train a ResNet model.')
+
+    parser.add_argument('-o', '--output_model', type=str, required=True,
+                        help='Name of output pth model.')
+    args = parser.parse_args()
+
+    main(args)

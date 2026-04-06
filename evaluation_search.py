@@ -78,6 +78,8 @@ def main():
     labels_top_images = get_similar_images(dataloader, clip_encoder, text_embeds)
     valid_labels = [str(label) for label in labels_top_images if label == target_face]
 
+    print(labels_top_images)
+
     accuracy = len(valid_labels) / len(labels_top_images)
     print("Accuracy:", accuracy)
     print()

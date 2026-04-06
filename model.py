@@ -1,8 +1,5 @@
 import torch
-import numpy as np
 import torch.nn as nn
-from transformers import DistilBertModel, DistilBertTokenizerFast
-from torchvision.models import resnet34
 from torchvision import models
 from transformers import AutoTokenizer, AutoModel
 from config import VISION_MODEL, LANGUAGE_MODEL, PROJECTION_SIZE, device
@@ -21,10 +18,10 @@ class CLIP_DistilBert_ResNet(nn.Module):
         # -----------------------------
         # 1. TEXT ENCODER (DistilBERT)
         # -----------------------------
-        self.tokenizer = AutoTokenizer.from_pretrained(text_model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(text_model_name, local_files_only=True)
         self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 
-        self.text_encoder = AutoModel.from_pretrained(LANGUAGE_MODEL)
+        self.text_encoder = AutoModel.from_pretrained(LANGUAGE_MODEL, local_files_only=True)
 
         text_hidden_dim = self.text_encoder.config.dim  # usually 768
 
