@@ -6,6 +6,7 @@ from config import VISION_MODEL, LANGUAGE_MODEL, PROJECTION_SIZE, device
 import torch.nn.functional as F
 
 class CLIP_DistilBert_ResNet(nn.Module):
+
     def __init__(
         self,
         text_model_name: str = "distilbert-base-uncased",

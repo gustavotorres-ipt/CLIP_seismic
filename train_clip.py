@@ -4,14 +4,35 @@ import argparse
 import torch
 import torch.nn.functional as F
 import copy
+import numpy as np
 from model import CLIP_DistilBert_ResNet
 from torch.utils.data import DataLoader
+from torch.utils.data import WeightedRandomSampler
 from torch.optim import Adam
 from dataset import load_datasets
 from tqdm import tqdm
 from config import EPOCHS, LEARNING_RATES, BATCH_SIZE, PATIENCE, device
 
 STEPS_SCHEDULER = 2
+
+def validation_step(custom_clip_model, val_loader, val_dataset):
+    total_val_loss = 0
+
+    ######### Validation ###########
+    custom_clip_model.eval()
+
+    with torch.no_grad():
+        for images, texts, _ in tqdm(val_loader):
+            images = images.to(device)
+            # texts = list of caption strings
+            
+            logits_per_image, logits_per_text = custom_clip_model(images, texts)
+            loss = clip_loss(logits_per_image, logits_per_text)
+            
+            total_val_loss += loss.item()
+
+    avg_val_loss = total_val_loss / len(val_dataset)
+    print(f"Initial val. loss: {avg_val_loss}")
 
 
 def clip_loss(logits_per_image, logits_per_text):
@@ -20,6 +41,25 @@ def clip_loss(logits_per_image, logits_per_text):
     loss_i = F.cross_entropy(logits_per_image, labels)
     loss_t = F.cross_entropy(logits_per_text, labels)
     return (loss_i + loss_t) / 2
+
+
+def get_sampler_class_distribution(train_dataset):
+
+    labels = np.array([label for _, _, label in train_dataset])
+    _, indices = np.unique(labels, return_index=True)
+    indices = np.sort(indices)
+
+    unique_labels = labels[indices]
+    class_counts = {label: 0 for label in unique_labels}
+    for label in labels:
+        class_counts[label] += 1
+    class_weights = {label: 1.0 / class_counts[label] for label in unique_labels}
+
+    sample_weights = [class_weights[label] for label in unique_labels]
+
+    sampler = WeightedRandomSampler(
+        sample_weights, num_samples=len(sample_weights), replacement=True)
+    return sampler
 
 
 def main(args):
@@ -51,6 +91,7 @@ def main(args):
 
     train_dataset, val_dataset = load_datasets()
 
+    # sampler = get_sampler_class_distribution(train_dataset)
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
@@ -65,6 +106,8 @@ def main(args):
         step_size=STEPS_SCHEDULER,
         gamma=0.5      # multiply LR by 0.5
     )
+
+    validation_step(custom_clip_model, val_loader, val_dataset)
 
     for epoch in tqdm(range(EPOCHS)):  # Number of epochs
         ######### Training ###########
