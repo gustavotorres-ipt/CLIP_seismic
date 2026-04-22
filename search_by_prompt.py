@@ -10,11 +10,12 @@ from numpy._typing import NDArray
 from torchvision.transforms.functional import PILImage
 from dataset import ImageNorm
 from PIL import Image
-from config import BATCH_SIZE, device, CLIP_FILE, IMG_SIZE
+from config import BATCH_SIZE, device, CLIP_FILE
 from model import CLIP_DistilBert_ResNet
 from tqdm import tqdm
 
 
+IMG_SIZE = 64
 BATCH_SIZE = 128
 NUMBER_IMAGES_SHOW = 30
 MAX_ZEROES_PART = 0.65
