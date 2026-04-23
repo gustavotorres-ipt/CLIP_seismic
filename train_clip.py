@@ -11,7 +11,7 @@ from torch.utils.data import WeightedRandomSampler
 from torch.optim import Adam
 from dataset import load_datasets
 from tqdm import tqdm
-from config import EPOCHS, LEARNING_RATES, BATCH_SIZE, PATIENCE, device
+from config import CLIP_FILE, EPOCHS, LEARNING_RATES, BATCH_SIZE, PATIENCE, device
 
 STEPS_SCHEDULER = 2
 
@@ -62,10 +62,10 @@ def get_sampler_class_distribution(train_dataset):
     return sampler
 
 
-def main(args):
-    while os.path.exists(args.output_model):
+def main():
+    while os.path.exists(CLIP_FILE):
         user_input = input(
-            f"A model {args.output_model} already exists. Do you want to override it? (y/n): ")
+            f"A model {CLIP_FILE} already exists. Do you want to override it? (y/n): ")
         if user_input[0] == 'n':
             sys.exit(0)
         elif user_input[0] == 'y':
@@ -161,8 +161,8 @@ def main(args):
             best_val_loss = avg_val_loss
             best_model_wts = copy.deepcopy(custom_clip_model.state_dict())
             epochs_no_improve = 0
-            torch.save(custom_clip_model.state_dict(), args.output_model)
-            print(args.output_model, "saved.")
+            torch.save(custom_clip_model.state_dict(), CLIP_FILE)
+            print(CLIP_FILE, "saved.")
         else:
             epochs_no_improve += 1
             if epochs_no_improve >= PATIENCE:
@@ -173,10 +173,4 @@ def main(args):
 
 
 if __name__ == "__main__":
-    parser = argparse.ArgumentParser('Train a ResNet model.')
-
-    parser.add_argument('-o', '--output_model', type=str, required=True,
-                        help='Name of output pth model.')
-    args = parser.parse_args()
-
-    main(args)
+    main()
