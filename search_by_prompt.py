@@ -1,3 +1,5 @@
+import sys
+import argparse
 import torch
 import numpy as np
 import math
@@ -6,7 +8,7 @@ import matplotlib.pyplot as plt
 import cigvis
 import cv2
 from torchvision import transforms
-from numpy._typing import NDArray
+from numpy.typing import NDArray
 from torchvision.transforms.functional import PILImage
 from dataset import ImageNorm
 from PIL import Image
@@ -240,31 +242,32 @@ def highlight_volume(seismic_vol, coordinates):
     return seismic_vol_copy
 
 
-def main():
-    path = "C:\\Users\\gustavotorres\\Desktop\\dados\\petrobras\\F3\\F3_amplitude.npy"
-    seismic_vol = np.load(path).astype(np.float32)
+def load_seismic_volume(path: str) -> NDArray:
+    """Loads a npy seismic volume, given the filepath.
 
-    global max_inlines
-    max_inlines = seismic_vol.shape[0]
+    Args:
+        path (str): Path of loaded file.
 
-    # Transform the image to the CLIP format
-    transformation = transforms.Compose([
-        transforms.Resize((96, 96)),
-        transforms.ToTensor(),
-        ImageNorm()
-    ])
+    Returns:
+        NDArray: 3D volume containing the seismic data.
 
+    Raises:
+        ValueError: if the file in invalid (not a 3D numpy).
+    """
+    try:
+        seismic_vol = np.load(path).astype(np.float32)
+    except:
+        print("Invalid file format. Please use a 3D npy file.")
+        sys.exit(1)
+    return seismic_vol
+
+
+def search_seisfacies(seismic_vol, transformation, clip_encoder):
     # Transform the image to the CLIP format
     patches_data = split_volume_in_patches(seismic_vol, transformation)
 
-    patches_images = patches_data['patches_images']
+    # patches_images = patches_data['patches_images']
     patches_tensors = patches_data['patches_tensors']
-
-    # Load the CLIP model
-    clip_encoder = CLIP_DistilBert_ResNet().to(device)
-    clip_encoder.load_state_dict(torch.load(CLIP_FILE))
-
-    clip_encoder.eval()
 
     while(True):
         # Enter prompt
@@ -289,5 +292,34 @@ def main():
         cv2.destroyAllWindows() 
 
 
+def main(args):
+    # path = "C:\\Users\\gustavotorres\\Desktop\\dados\\petrobras\\F3\\F3_amplitude.npy"
+    seismic_vol = load_seismic_volume(args.input_file)
+
+    global max_inlines
+    max_inlines = seismic_vol.shape[0]
+
+    # Load the CLIP model
+    clip_encoder = CLIP_DistilBert_ResNet().to(device)
+    clip_encoder.load_state_dict(torch.load(CLIP_FILE))
+
+    clip_encoder.eval()
+
+    # Transform the image to the CLIP format
+    transformation = transforms.Compose([
+        transforms.Resize((96, 96)),
+        transforms.ToTensor(),
+        ImageNorm()
+    ])
+
+    search_seisfacies(seismic_vol, transformation, clip_encoder) 
+
+
 if __name__ == "__main__":
-    main()
+    parser = argparse.ArgumentParser('Search for seismic facies in a volume.')
+
+    parser.add_argument('-i', '--input_file', type=str, required=True,
+                        help='Seismic volume path.')
+    args = parser.parse_args()
+
+    main(args)

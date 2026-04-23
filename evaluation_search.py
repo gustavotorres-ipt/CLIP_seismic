@@ -11,7 +11,7 @@ from dataset import load_datasets
 
 def get_similar_images(
     dataloader: DataLoader, clip_encoder: CLIP_DistilBert_ResNet,
-    prompt_embeds: torch.Tensor, num_images = 100
+    prompt_embeds: torch.Tensor, num_images = 200
 ) -> NDArray[np.int32]:
 
     cos_similarities_torch = []
@@ -70,7 +70,7 @@ def main():
             break
 
     target_face = numbers_facies[selected_num]
-    prompt = f'A {target_face} seismic facie.'
+    prompt = f'{target_face} seismic facies.'
 
     with torch.no_grad():
         text_embeds = clip_encoder.encode_text(prompt)
