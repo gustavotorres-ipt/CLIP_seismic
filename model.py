@@ -1,34 +1,35 @@
 import torch
 import torch.nn as nn
-from transformers import DistilBertModel, DistilBertTokenizerFast
-from torchvision.models import resnet34
 from torchvision import models
 from transformers import AutoTokenizer, AutoModel
-from config import VISION_MODEL, LANGUAGE_MODEL, PROJECTION_SIZE
+from config import VISION_MODEL, LANGUAGE_MODEL, PROJECTION_SIZE, device
 import torch.nn.functional as F
+import numpy as np
 
 class CLIP_DistilBert_ResNet(nn.Module):
+
     def __init__(
         self,
         text_model_name: str = "distilbert-base-uncased",
         embed_dim: int = PROJECTION_SIZE,
-        image_pretrained: bool = True,
-        learnable_temp = 1.
+        # image_pretrained: bool = True,
+        learnable_temp = 0.07
     ) -> None:
         super().__init__()
 
         # -----------------------------
         # 1. TEXT ENCODER (DistilBERT)
         # -----------------------------
-        self.tokenizer = AutoTokenizer.from_pretrained(text_model_name)
+        self.tokenizer = AutoTokenizer.from_pretrained(text_model_name, local_files_only=True)
         self.tokenizer.add_special_tokens({'pad_token': '[PAD]'})
 
-        self.text_encoder = AutoModel.from_pretrained(LANGUAGE_MODEL)
+        self.text_encoder = AutoModel.from_pretrained(LANGUAGE_MODEL, local_files_only=True)
 
         text_hidden_dim = self.text_encoder.config.dim  # usually 768
 
         # Text projection into shared space
         self.text_proj = nn.Linear(text_hidden_dim, embed_dim)
+        # self.text_dropout = nn.Dropout(p=0.2)
 
         # -----------------------------
         # 2. IMAGE ENCODER (ResNet-34)
@@ -57,12 +58,13 @@ class CLIP_DistilBert_ResNet(nn.Module):
 
         # Image projection into shared space
         self.image_proj = nn.Linear(image_hidden_dim, embed_dim)
+        # self.image_dropout = nn.Dropout(p=0.2)
 
+
+        ########################################################
         # Temperature parameter (learnable)
-        self.logit_scale = nn.Parameter(
-            torch.ones([]) * (1 / learnable_temp)
-        )
-
+        self.logit_scale = nn.Parameter(torch.tensor([np.log(1 / learnable_temp)]))
+        # self.logit_scale = nn.Parameter(torch.zeros([]))
     # ------------------------------------------------------------------
     # Encode text using DistilBERT → pooled embedding → projection → norm
     # ------------------------------------------------------------------
@@ -75,15 +77,15 @@ class CLIP_DistilBert_ResNet(nn.Module):
             return_tensors="pt",
         )
         # move to same device as module params
-        tokens = {k: v.to(self.text_proj.weight.device) for k, v in tokens.items()}
+        tokens = {k: v.to(device) for k, v in tokens.items()}
 
         outputs = self.text_encoder(**tokens)
 
         # Use CLS token embedding (DistilBERT has CLS at index 0)
         text_emb = outputs.last_hidden_state[:, 0, :]  # (batch, hidden_dim)
+        text_emb = self.text_proj(text_emb)
+        # text_emb = self.text_dropout(text_emb)
 
-        text_emb = self.text_proj(text_emb)  # project
-        text_emb = text_emb / text_emb.norm(dim=-1, keepdim=True)  # L2 normalize
         return text_emb
 
     # --------------------------------------------------------------
@@ -91,10 +93,10 @@ class CLIP_DistilBert_ResNet(nn.Module):
     # --------------------------------------------------------------
     def encode_image(self, images):
         img_feat = self.image_encoder(images)  # (batch, 512)
-        # img_emb = self.image_proj(img_feat[:, :, 0, 0])
         img_emb = img_feat[:, :, 0, 0]
-        img_emb = img_emb / img_emb.norm(dim=-1, keepdim=True)
         img_emb = self.image_proj(img_emb)
+        # img_emb = self.image_dropout(img_emb)
+
         return img_emb
 
     # --------------------------------------------------------------
@@ -113,6 +115,7 @@ class CLIP_DistilBert_ResNet(nn.Module):
 
         # Use learned temperature
         logit_scale = self.logit_scale.exp().clamp(max=100)
+
         logits_per_image *= logit_scale
         logits_per_text *= logit_scale
 
