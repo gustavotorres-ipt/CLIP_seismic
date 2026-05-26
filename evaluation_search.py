@@ -53,6 +53,7 @@ def main():
     clip_encoder.load_state_dict(torch.load(CLIP_FILE))
 
     clip_encoder.eval()
+    breakpoint()
 
     numbers_facies = {'1': 'divergent', '2': 'chaotic',
                       '3': 'sigmoid', '4': 'parallel'}

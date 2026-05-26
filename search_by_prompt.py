@@ -17,7 +17,7 @@ from model import CLIP_DistilBert_ResNet
 from tqdm import tqdm
 
 
-IMG_SIZE = 64
+PATCH_SIZE = 64
 BATCH_SIZE = 128
 NUMBER_IMAGES_SHOW = 30
 MAX_ZEROES_PART = 0.65
@@ -129,11 +129,11 @@ def split_volume_in_patches(
     # Cut the seismic model in multiple patches
     for il in tqdm(range(0, seismic_vol.shape[0])):
         # cut image in 64x64 patches 
-        for xl in range(IMG_SIZE, seismic_vol.shape[1], IMG_SIZE):
-            for dep in range(IMG_SIZE, seismic_vol.shape[2], IMG_SIZE):
-                x1 = xl - IMG_SIZE
+        for xl in range(PATCH_SIZE, seismic_vol.shape[1], PATCH_SIZE):
+            for dep in range(PATCH_SIZE, seismic_vol.shape[2], PATCH_SIZE):
+                x1 = xl - PATCH_SIZE
                 x2 = xl
-                y1 = dep - IMG_SIZE
+                y1 = dep - PATCH_SIZE
                 y2 = dep
 
                 patch_il = seismic_vol[il, x1:x2, y1:y2].T
@@ -163,7 +163,7 @@ def split_volume_in_patches(
 
 def get_most_similar_images(
         patches_tensors: torch.Tensor, clip_encoder: CLIP_DistilBert_ResNet,
-        text_embeds: torch.Tensor) -> NDArray[np.int32]:
+        text_embeds: torch.Tensor) -> list[int]:
     """
     Rank image patches based on their embedding similarity to a text prompt
     embedding and return the indices of the most similar patches: the
@@ -184,7 +184,7 @@ def get_most_similar_images(
             Shape is (1, D), where D is the embedding dimension of the CLIP model.
 
     Returns:
-        most_similar_imgs (NDArray[np.int32]): Array containing the indices
+        most_similar_imgs (list[int]): List containing the indices
         of the image patches ranked by similarity ordered from highest to
         lowest similarity.
     """
@@ -192,6 +192,7 @@ def get_most_similar_images(
 
     print("Calculating most similar images...")
 
+    text_embeds = F.normalize(text_embeds, dim=1)
     with torch.no_grad():
         # Calc cosine distance between all images
         for i in tqdm(range(0, patches_tensors.shape[0], BATCH_SIZE)):
@@ -199,7 +200,6 @@ def get_most_similar_images(
 
             image_embeds = clip_encoder.encode_image(img_batch)
 
-            text_embeds = F.normalize(text_embeds, dim=1)
             image_embeds = F.normalize(image_embeds, dim=1)
 
             similarities_batch = image_embeds @ text_embeds.T   # (128, 1)
@@ -234,9 +234,9 @@ def highlight_volume(seismic_vol, coordinates):
         axis=-1)
 
     for il, xl, d in coordinates:
-        x1 = xl - IMG_SIZE
+        x1 = xl - PATCH_SIZE
         x2 = xl
-        y1 = d - IMG_SIZE
+        y1 = d - PATCH_SIZE
         y2 = d
         seismic_vol_copy[il, x1:x2, y1:y2, 2] = 180  #1.5 * seismic_vol[il, y1:y2, x1:x2]
     return seismic_vol_copy
@@ -280,6 +280,7 @@ def search_seisfacies(seismic_vol, transformation, clip_encoder):
         most_similar_imgs = get_most_similar_images(
             patches_tensors, clip_encoder, text_embeds
         )
+        print(len(most_similar_imgs))
 
         coordinates = patches_data['coordinates']
         coordinates = [coordinates[i] for i in most_similar_imgs]

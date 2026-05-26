@@ -11,11 +11,9 @@ from torch.utils.data import WeightedRandomSampler
 from torch.optim import Adam
 from dataset import load_datasets
 from tqdm import tqdm
-from config import CLIP_FILE, EPOCHS, LEARNING_RATES, BATCH_SIZE, PATIENCE, device
+from config import CLIP_FILE, EPOCHS, LEARNING_RATES, BATCH_SIZE, PATIENCE, device, STEPS_SCHEDULER
 
-STEPS_SCHEDULER = 2
-
-def validation_step(custom_clip_model, val_loader, val_dataset):
+def validation_step(custom_clip_model, val_loader):
     total_val_loss = 0
 
     ######### Validation ###########
@@ -31,7 +29,7 @@ def validation_step(custom_clip_model, val_loader, val_dataset):
             
             total_val_loss += loss.item()
 
-    avg_val_loss = total_val_loss / len(val_dataset)
+    avg_val_loss = total_val_loss / len(val_loader)
     print(f"Initial val. loss: {avg_val_loss}")
 
 
@@ -56,6 +54,7 @@ def get_sampler_class_distribution(train_dataset):
     class_weights = {label: 1.0 / class_counts[label] for label in unique_labels}
 
     sample_weights = [class_weights[label] for label in unique_labels]
+    # sample_weights = [class_weights[label] for label in labels]
 
     sampler = WeightedRandomSampler(
         sample_weights, num_samples=len(sample_weights), replacement=True)
@@ -92,6 +91,8 @@ def main():
     train_dataset, val_dataset = load_datasets()
 
     # sampler = get_sampler_class_distribution(train_dataset)
+    # train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, sampler=sampler)
+    # val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE)
     train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
@@ -107,7 +108,7 @@ def main():
         gamma=0.5      # multiply LR by 0.5
     )
 
-    validation_step(custom_clip_model, val_loader, val_dataset)
+    validation_step(custom_clip_model, val_loader)
 
     for epoch in tqdm(range(EPOCHS)):  # Number of epochs
         ######### Training ###########
@@ -132,7 +133,7 @@ def main():
 
             total_train_loss += loss.item()
 
-        avg_train_loss = total_train_loss / len(train_dataset)
+        avg_train_loss = total_train_loss / len(train_loader)
 
         ######### Validation ###########
         custom_clip_model.eval()
@@ -147,7 +148,7 @@ def main():
                 
                 total_val_loss += loss.item()
 
-        avg_val_loss = total_val_loss / len(val_dataset)
+        avg_val_loss = total_val_loss / len(val_loader)
 
         current_lr = scheduler.get_last_lr()
         scheduler.step()

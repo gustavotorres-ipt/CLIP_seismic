@@ -15,6 +15,7 @@ TEXT_FOLDER_TRAIN = 'data/legendas_f3_pari_peno_CLIP/training'
 IMAGE_FOLDER_VAL = 'data/imagens_f3_pari_peno_CLIP/validation'
 TEXT_FOLDER_VAL = 'data/legendas_f3_pari_peno_CLIP/validation'
 
+STEPS_SCHEDULER = 4
 
 LEARNING_RATES = {
     'image_encoder': 1e-5,

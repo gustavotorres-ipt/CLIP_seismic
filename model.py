@@ -4,6 +4,7 @@ from torchvision import models
 from transformers import AutoTokenizer, AutoModel
 from config import VISION_MODEL, LANGUAGE_MODEL, PROJECTION_SIZE, device
 import torch.nn.functional as F
+import numpy as np
 
 class CLIP_DistilBert_ResNet(nn.Module):
 
@@ -11,8 +12,8 @@ class CLIP_DistilBert_ResNet(nn.Module):
         self,
         text_model_name: str = "distilbert-base-uncased",
         embed_dim: int = PROJECTION_SIZE,
-        image_pretrained: bool = True,
-        learnable_temp = 1.
+        # image_pretrained: bool = True,
+        learnable_temp = 0.07
     ) -> None:
         super().__init__()
 
@@ -62,8 +63,8 @@ class CLIP_DistilBert_ResNet(nn.Module):
 
         ########################################################
         # Temperature parameter (learnable)
-        # self.logit_scale = nn.Parameter(torch.tensor([np.log(learnable_temp)]))
-        self.logit_scale = nn.Parameter(torch.zeros([]))
+        self.logit_scale = nn.Parameter(torch.tensor([np.log(1 / learnable_temp)]))
+        # self.logit_scale = nn.Parameter(torch.zeros([]))
     # ------------------------------------------------------------------
     # Encode text using DistilBERT → pooled embedding → projection → norm
     # ------------------------------------------------------------------
