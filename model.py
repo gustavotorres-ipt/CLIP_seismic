@@ -63,8 +63,8 @@ class CLIP_DistilBert_ResNet(nn.Module):
 
         ########################################################
         # Temperature parameter (learnable)
-        self.logit_scale = nn.Parameter(torch.tensor([np.log(1 / learnable_temp)]))
-        # self.logit_scale = nn.Parameter(torch.zeros([]))
+        # self.logit_scale = nn.Parameter(torch.tensor([np.log(1 / learnable_temp)]))
+        self.logit_scale = nn.Parameter(torch.zeros([]))
     # ------------------------------------------------------------------
     # Encode text using DistilBERT → pooled embedding → projection → norm
     # ------------------------------------------------------------------

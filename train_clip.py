@@ -1,6 +1,5 @@
 import os
 import sys
-import argparse
 import torch
 import torch.nn.functional as F
 import copy
@@ -8,10 +7,13 @@ import numpy as np
 from model import CLIP_DistilBert_ResNet
 from torch.utils.data import DataLoader
 from torch.utils.data import WeightedRandomSampler
-from torch.optim import Adam
+from torch.optim import AdamW
 from dataset import load_datasets
 from tqdm import tqdm
-from config import CLIP_FILE, EPOCHS, LEARNING_RATES, BATCH_SIZE, PATIENCE, device, STEPS_SCHEDULER
+from config import (
+    CLIP_FILE, EPOCHS, LEARNING_RATES, BATCH_SIZE,
+    PATIENCE, STEPS_SCHEDULER, device
+)
 
 def validation_step(custom_clip_model, val_loader):
     total_val_loss = 0
@@ -43,21 +45,28 @@ def clip_loss(logits_per_image, logits_per_text):
 
 def get_sampler_class_distribution(train_dataset):
 
+    # labels = np.array([label for _, _, label in train_dataset])
+    # _, indices = np.unique(labels, return_index=True)
+    # indices = np.sort(indices)
+
     labels = np.array([label for _, _, label in train_dataset])
-    _, indices = np.unique(labels, return_index=True)
-    indices = np.sort(indices)
+    
+    unique_labels, counts = np.unique(labels, return_counts=True)
+    # Inverse-frequency weights
+    class_weights = {
+        label: 1.0 / count
+        for label, count in zip(unique_labels, counts)
+    }
 
-    unique_labels = labels[indices]
-    class_counts = {label: 0 for label in unique_labels}
-    for label in labels:
-        class_counts[label] += 1
-    class_weights = {label: 1.0 / class_counts[label] for label in unique_labels}
-
-    sample_weights = [class_weights[label] for label in unique_labels]
-    # sample_weights = [class_weights[label] for label in labels]
+    # One weight for each sample
+    sample_weights = [class_weights[label] for label in labels]
 
     sampler = WeightedRandomSampler(
-        sample_weights, num_samples=len(sample_weights), replacement=True)
+        weights=sample_weights,
+        num_samples=len(sample_weights),
+        replacement=True
+    )
+
     return sampler
 
 
@@ -75,7 +84,7 @@ def main():
 
     custom_clip_model = CLIP_DistilBert_ResNet().to(device)
 
-    optimizer = Adam([
+    optimizer = AdamW([
         {'params': custom_clip_model.image_encoder.parameters(),
          'lr': LEARNING_RATES['image_encoder']},
         {'params': custom_clip_model.text_encoder.parameters(),
@@ -86,14 +95,14 @@ def main():
          'lr': LEARNING_RATES['text_proj']},
         {'params': custom_clip_model.logit_scale,
          'lr': LEARNING_RATES['logit_scale']},
-    ])
+    ], weight_decay=1e-2)
+    # optimizer = torch.optim.AdamW(optimizer_grouped_parameters, weight_decay=
 
     train_dataset, val_dataset = load_datasets()
 
-    # sampler = get_sampler_class_distribution(train_dataset)
-    # train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, sampler=sampler)
-    # val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE)
-    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
+    sampler = get_sampler_class_distribution(train_dataset)
+    train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, sampler=sampler)
+    # train_loader = DataLoader(train_dataset, batch_size=BATCH_SIZE, shuffle=True)
     val_loader = DataLoader(val_dataset, batch_size=BATCH_SIZE, shuffle=False)
 
     # Number of warmup steps and number of cosine scheduling steps.
@@ -108,7 +117,10 @@ def main():
         gamma=0.5      # multiply LR by 0.5
     )
 
+    ############## TODO remover ###################
+    # custom_clip_model.load_state_dict(torch.load('clip_parihaka_f3.pth'))
     validation_step(custom_clip_model, val_loader)
+    # breakpoint()
 
     for epoch in tqdm(range(EPOCHS)):  # Number of epochs
         ######### Training ###########
