@@ -33,7 +33,7 @@ def load_images(batch_size):
               for path in image_paths[:batch_size]]
     return images
 
-def load_datasets():
+def load_datasets(deterministic_captions=False):
     image_paths_train = [
         os.path.join(IMAGE_FOLDER_TRAIN, filename)
         for filename in sorted(os.listdir(IMAGE_FOLDER_TRAIN))
@@ -58,7 +58,8 @@ def load_datasets():
 
     transformation_train = transforms.Compose([
         transforms.RandomResizedCrop(IMG_SIZE, scale=(0.6, 1.0)),
-        transforms.ColorJitter(brightness=0.2, contrast=0.2),
+        # transforms.ColorJitter(brightness=0.2, contrast=0.2),
+        transforms.RandomHorizontalFlip(p=0.5),
         transforms.ToTensor(),
         ImageNorm(),
     ])
@@ -72,21 +73,24 @@ def load_datasets():
     train_dataset = CustomDataset(
         image_paths=image_paths_train, caption_list_per_image=captions_train,
         labels=labels_train, transform=transformation_train,
+        same_caption_always=deterministic_captions
     )
     val_dataset = CustomDataset(
         image_paths=image_paths_val, caption_list_per_image=captions_val,
-        labels=labels_val, transform=transformation_val,
+        labels=labels_val, transform=transformation_val, 
+        same_caption_always=deterministic_captions
     )
-
     return train_dataset, val_dataset
 
 
 class CustomDataset(torch.utils.data.Dataset):
-    def __init__(self, image_paths, caption_list_per_image, labels, transform=None):
+    def __init__(self, image_paths, caption_list_per_image, labels,
+                 transform=None, same_caption_always=False):
         self.image_paths = image_paths
         self.caption_list_per_image = caption_list_per_image
         self.labels = labels
         self.transform = transform
+        self.same_caption_always = same_caption_always
 
     def __len__(self):
         return len(self.image_paths)
@@ -96,6 +100,9 @@ class CustomDataset(torch.utils.data.Dataset):
         image = Image.open(self.image_paths[idx]).convert("RGB")
         if self.transform:
             image = self.transform(image)
-        text = random.choice(self.caption_list_per_image[idx])
+        if not(self.same_caption_always):
+            text = random.choice(self.caption_list_per_image[idx])
+        else:
+            text = self.caption_list_per_image[idx][0]
         label = self.labels[idx]
         return image, text, label
